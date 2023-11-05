@@ -409,7 +409,7 @@ impl TryFrom<String> for Move {
         let Some(first) = chars.next() else {
             return Err(UnexpectedEndOfString);
         };
-        match first.to_lowercase().next().ok_or(UnrecognizedChar)? {
+        let parsed = match first.to_lowercase().next().ok_or(UnrecognizedChar)? {
             dir @ ('w' | 'a' | 's' | 'd') => {
                 let second_dir = {
                     match chars.next() {
@@ -447,6 +447,11 @@ impl TryFrom<String> for Move {
                 ))
             }
             _ => Err(UnrecognizedChar),
+        };
+        if chars.peekable().peek().is_some() {
+            return Err(UnrecognizedChar)
         }
+
+        parsed
     }
 }
