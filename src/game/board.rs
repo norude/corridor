@@ -138,6 +138,17 @@ pub enum MoveMakeFail {
     AddFenceMove(fence_move::Fail),
     PawnMoveFail(pawn_move::Fail),
 }
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Lmi {
+    // LegalMove inner workings
+    MovePlayer((usize, usize)),
+    PlaceFence(Axis, (usize, usize)),
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct LegalMove(Lmi);
+
 impl Board {
     pub fn make_move(&mut self, r#move: Move, player: PlayerColor) -> Result<(), MoveMakeFail> {
         match r#move {
@@ -150,16 +161,29 @@ impl Board {
         }
     }
 
-    pub fn is_move_legal(&self, r#move: Move, player: PlayerColor) -> Result<(), MoveMakeFail> {
+    pub fn make_legal_move(&mut self, r#move: LegalMove, player: PlayerColor) {
         match r#move {
-            Move::MovePlayer(dir, second_dir) => self
-                .pawn_move_destination(player, dir, second_dir)
-                .map_err(MoveMakeFail::PawnMoveFail)
-                .map(|_| ()),
-            Move::PlaceFence(axis, pos) => self
-                .is_fence_move_legal(player, axis, pos)
-                .map_err(MoveMakeFail::AddFenceMove),
+            LegalMove(Lmi::MovePlayer(pos)) => self.move_pawn_unchecked(player, pos),
+            LegalMove(Lmi::PlaceFence(axis, pos)) => self.move_fence_unchecked(player, axis, pos),
         }
+    }
+
+    pub fn make_move_legal(
+        &self,
+        r#move: Move,
+        player: PlayerColor,
+    ) -> Result<LegalMove, MoveMakeFail> {
+        Ok(LegalMove(match r#move {
+            Move::MovePlayer(dir, second_dir) => Lmi::MovePlayer(
+                self.pawn_move_destination(player, dir, second_dir)
+                    .map_err(MoveMakeFail::PawnMoveFail)?,
+            ),
+            Move::PlaceFence(axis, pos) => {
+                self.is_fence_move_legal(player, axis, pos)
+                    .map_err(MoveMakeFail::AddFenceMove)?;
+                Lmi::PlaceFence(axis, pos)
+            }
+        }))
     }
 }
 

@@ -1,7 +1,7 @@
 pub mod board;
 use core::fmt::Display;
 
-pub use board::{fence_move, pawn_move, Board, MoveMakeFail};
+pub use board::{fence_move, pawn_move, Board, LegalMove, MoveMakeFail};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PlayerColor {
@@ -58,6 +58,7 @@ pub enum Move {
     MovePlayer(Direction, Option<Direction>),
     PlaceFence(Axis, (usize, usize)),
 }
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TryIntoMoveError {
     UnrecognizedChar,

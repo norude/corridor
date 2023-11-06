@@ -14,6 +14,16 @@ impl Board {
         (x, y): (usize, usize),
     ) -> Result<(), Fail> {
         self.is_fence_move_legal(player, axis, (x, y))?;
+        self.move_fence_unchecked(player, axis, (x, y));
+        Ok(())
+    }
+
+    pub(super) fn move_fence_unchecked(
+        &mut self,
+        player: PlayerColor,
+        axis: Axis,
+        (x, y): (usize, usize),
+    ) {
         self.fences[y][x] = Some(axis);
         match player {
             PlayerColor::White => self.fences_left_for_white -= 1,
@@ -44,8 +54,6 @@ impl Board {
                 }
             };
         }
-
-        Ok(())
     }
 
     pub fn is_fence_move_legal(
@@ -73,7 +81,9 @@ impl Board {
 
         let mut clone = self.clone();
         clone.fences[y][x] = Some(axis);
-        if clone.are_pawns_able_to_win() {
+        let are_pawns_able_to_win = clone.are_pawns_able_to_win();
+
+        if are_pawns_able_to_win {
             Ok(())
         } else {
             Err(NoPathRemaining)

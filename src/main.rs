@@ -7,37 +7,32 @@
 )]
 #![allow(dead_code)]
 mod game;
-use crate::game::{fence_move, pawn_move, Board, MoveMakeFail, PlayerColor};
+use game::{fence_move, pawn_move, Board, LegalMove, MoveMakeFail, PlayerColor};
 
-fn game_loop() {
-    use PlayerColor::{Black, White};
-    let mut turn = White;
-    let mut board = Board::default();
+fn get_legal_move_using_players_input(board: &Board, turn: PlayerColor) -> LegalMove {
     loop {
-        //'game loop
-        println!("{board}");
-        //'trying_to_get_a_valid_move loop
-        loop {
-            let try_into = input_macro::input!("Type in {turn} player's move:").try_into();
-            let the_move = match try_into {
-                Ok(the_move) => the_move,
-                Err(err) => {
-                    match err {
-                        game::TryIntoMoveError::UnrecognizedChar => println!(
-							"Couldn't understand the move, because there was an unrecognized character"
-						),
-                        game::TryIntoMoveError::UnexpectedEndOfString => println!(
-								"Couldn't understand the move, because more characters were expected to be given"
-							),
-                    }
-                    continue;
+        let try_into = input_macro::input!("Type in {turn} player's move:").try_into();
+        let the_move = match try_into {
+            Ok(the_move) => the_move,
+            Err(err) => {
+                match err {
+                    game::TryIntoMoveError::UnrecognizedChar => println!(
+                        "Couldn't understand the move, because there was an unrecognized character"
+                    ),
+                    game::TryIntoMoveError::UnexpectedEndOfString => println!(
+						"Couldn't understand the move, because more characters were expected to be given"
+					),
                 }
-            };
-            if let Err(err) = board.make_move(the_move, turn) {
+                continue;
+            }
+        };
+        match board.make_move_legal(the_move, turn) {
+            Err(err) => {
                 match err {
                     MoveMakeFail::PawnMoveFail(pawn_move::Fail::PathObstructed) => {
                         println!("Couldn't move the pawn, because the chosen path was obstructed")
                     }
+
                     MoveMakeFail::PawnMoveFail(pawn_move::Fail::NoSecondary) => println!(
 						"Couldn't move the pawn, because secondary direction was required but not provided"
 					),
@@ -56,9 +51,19 @@ fn game_loop() {
                 };
                 continue;
             }
-            break;
+            Ok(the_move) => return the_move,
         }
+    }
+}
 
+fn game_loop() {
+    use PlayerColor::{Black, White};
+    let mut turn = White;
+    let mut board = Board::default();
+    loop {
+        //'game loop
+        println!("{board}");
+        board.make_legal_move(get_legal_move_using_players_input(&board, turn), turn);
         if let Some(player) = board.is_game_won() {
             println!("{board}");
             println!("{player:?} player won!");

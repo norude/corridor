@@ -13,19 +13,21 @@ impl Board {
         dir: Direction,
         second_dir: Option<Direction>,
     ) -> Result<(), Fail> {
-        let (x, y) = match pawn {
+        self.move_pawn_unchecked(pawn, self.pawn_move_destination(pawn, dir, second_dir)?);
+        Ok(())
+    }
+
+    pub(super) fn move_pawn_unchecked(&mut self, pawn: PlayerColor, (x, y): (usize, usize)) {
+        let (xo, yo) = match pawn {
             PlayerColor::White => self.white_pawn,
             PlayerColor::Black => self.black_pawn,
         };
-        let (x1, y1) = self.pawn_move_destination(pawn, dir, second_dir)?;
-        assert_eq!(self.squares[y1][x1], None);
-        self.squares[y1][x1] = Some(pawn);
-        self.squares[y][x] = None;
+        self.squares[yo][xo] = None;
+        self.squares[y][x] = Some(pawn);
         match pawn {
-            PlayerColor::White => self.white_pawn = (x1, y1),
-            PlayerColor::Black => self.black_pawn = (x1, y1),
+            PlayerColor::White => self.white_pawn = (x, y),
+            PlayerColor::Black => self.black_pawn = (x, y),
         };
-        Ok(())
     }
 
     pub fn pawn_move_destination(
