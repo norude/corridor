@@ -78,12 +78,12 @@ impl Board {
                     || y > 0 && self.fences[y - 1][x - 1] == Some(Axis::Vertical)
             }
             Direction::Right => {
-                x >= 8
+                x == 8
                     || y < 8 && self.fences[y][x] == Some(Axis::Vertical)
                     || y > 0 && self.fences[y - 1][x] == Some(Axis::Vertical)
             }
             Direction::Down => {
-                y >= 8
+                y == 8
                     || x < 8 && self.fences[y][x] == Some(Axis::Horizontal)
                     || x > 0 && self.fences[y][x - 1] == Some(Axis::Horizontal)
             }

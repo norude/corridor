@@ -91,61 +91,46 @@ impl Board {
     }
 
     pub fn are_pawns_able_to_win(&self) -> bool {
-        // dfs for the white pawn
-        'white_pawn_dfs: {
-            let mut stack = vec![self.white_pawn];
-            let mut visited = [[false; 9]; 9];
-            visited[self.white_pawn.1][self.white_pawn.0] = true;
+        let dfs = |pawn: (usize, usize), yl, dirs| {
+            let mut stack = vec![pawn];
+            let mut is_on_stack = [[false; 9]; 9];
+            is_on_stack[pawn.1][pawn.0] = true;
             while let Some((x, y)) = stack.pop() {
-                if y == 8 {
-                    break 'white_pawn_dfs;
+                if y == yl {
+                    return true;
                 }
-                for dir in [
-                    Direction::Down,
-                    Direction::Left,
-                    Direction::Right,
-                    Direction::Up,
-                ] {
+                for dir in dirs {
                     if self.is_obstructed((x, y), dir) {
                         continue;
                     }
                     let (x1, y1) = dir.offset((x, y));
-                    if visited[y1][x1] {
+                    if is_on_stack[y1][x1] {
                         continue;
                     }
                     stack.push((x1, y1));
-                    visited[y1][x1] = true;
+                    is_on_stack[y1][x1] = true;
                 }
             }
-            return false;
+            false
         };
-        'black_pawn_dfs: {
-            let mut stack = vec![self.black_pawn];
-            let mut visited = [[false; 9]; 9];
-            visited[self.black_pawn.1][self.black_pawn.0] = true;
-            while let Some((x, y)) = stack.pop() {
-                if y == 0 {
-                    break 'black_pawn_dfs;
-                }
-                for dir in [
-                    Direction::Up,
-                    Direction::Left,
-                    Direction::Right,
-                    Direction::Down,
-                ] {
-                    if self.is_obstructed((x, y), dir) {
-                        continue;
-                    }
-                    let (x1, y1) = dir.offset((x, y));
-                    if visited[y1][x1] {
-                        continue;
-                    }
-                    stack.push((x1, y1));
-                    visited[y1][x1] = true;
-                }
-            }
-            return false;
-        };
-        true
+        dfs(
+            self.white_pawn,
+            0,
+            [
+                Direction::Down,
+                Direction::Left,
+                Direction::Right,
+                Direction::Up,
+            ],
+        ) && dfs(
+            self.black_pawn,
+            8,
+            [
+                Direction::Down,
+                Direction::Left,
+                Direction::Right,
+                Direction::Up,
+            ],
+        )
     }
 }

@@ -1,10 +1,4 @@
-#![warn(
-    clippy::all,
-    clippy::pedantic,
-    clippy::nursery,
-    clippy::unwrap_used,
-    clippy::expect_used
-)]
+#![warn(clippy::all, clippy::pedantic, clippy::nursery, clippy::unwrap_used)]
 #![allow(dead_code)]
 mod game;
 use game::{fence_move, pawn_move, Board, LegalMove, MoveMakeFail, PlayerColor};
@@ -60,10 +54,20 @@ fn game_loop() {
     use PlayerColor::{Black, White};
     let mut turn = White;
     let mut board = Board::default();
+    let mut i = 0;
     loop {
         //'game loop
-        println!("{board}");
-        board.make_legal_move(get_legal_move_using_players_input(&board, turn), turn);
+        //println!("{board}");
+        println!("It's {turn} player's move! (turn {i})");
+        #[allow(unreachable_patterns, clippy::match_same_arms)]
+        let r#move = match turn {
+            White => board.find_best_move(turn),
+            White => get_legal_move_using_players_input(&board, turn),
+            Black => board.find_best_move(turn),
+            Black => get_legal_move_using_players_input(&board, turn),
+        };
+        board.make_legal_move(r#move, turn);
+        println!("Made move {move:?}");
         if let Some(player) = board.is_game_won() {
             println!("{board}");
             println!("{player:?} player won!");
@@ -73,6 +77,7 @@ fn game_loop() {
             White => Black,
             Black => White,
         };
+        i += 1;
     }
 }
 

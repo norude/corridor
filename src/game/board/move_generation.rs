@@ -1,10 +1,10 @@
-use crate::game::{Axis, Board, Direction, Move, PlayerColor};
-
+use super::{LegalMove, Lmi};
+use crate::game::{Axis, Board, Direction, PlayerColor};
 impl Board {
-    pub fn legal_moves(&self, player: PlayerColor) -> Vec<Move> {
+    pub fn legal_moves(&self, player: PlayerColor) -> Vec<LegalMove> {
         let mut moves = vec![];
         {
-            let (x, y) = match player {
+            let player_pos = match player {
                 PlayerColor::White => self.white_pawn,
                 PlayerColor::Black => self.black_pawn,
             };
@@ -15,17 +15,21 @@ impl Board {
                 Direction::Up,
                 Direction::Down,
             ] {
-                if self.is_obstructed((x, y), dir) {
+                if self.is_obstructed(player_pos, dir) {
                     continue;
                 }
-                let (x1, y1) = dir.offset((x, y));
-                if !self.is_obstructed((x1, y1), dir) || self.squares[y1][x1].is_none() {
-                    moves.push(Move::MovePlayer(dir, None));
+                let (x1, y1) = dir.offset(player_pos);
+                if self.squares[y1][x1].is_none() {
+                    moves.push(LegalMove(Lmi::MovePlayer((x1, y1))));
+                    continue;
+                }
+                if !self.is_obstructed((x1, y1), dir) {
+                    moves.push(LegalMove(Lmi::MovePlayer(dir.offset((x1, y1)))));
                     continue;
                 }
                 for sec_dir in dir.perpendiculars() {
-                    if !self.is_obstructed((x, y), sec_dir) {
-                        moves.push(Move::MovePlayer(dir, Some(sec_dir)));
+                    if !self.is_obstructed(player_pos, sec_dir) {
+                        moves.push(LegalMove(Lmi::MovePlayer(sec_dir.offset(player_pos))));
                     }
                 }
             }
@@ -39,7 +43,7 @@ impl Board {
                             && self.is_fence_move_legal(player, axis, (x, y)).is_ok()
                     })
                 {
-                    moves.push(Move::PlaceFence(axis, (x, y)));
+                    moves.push(LegalMove(Lmi::PlaceFence(axis, (x, y))));
                 }
             }
         }

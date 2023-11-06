@@ -1,5 +1,7 @@
-pub mod fence_move;
 mod move_generation;
+mod search_and_evaluation;
+
+pub mod fence_move;
 pub mod pawn_move;
 use core::fmt::Display;
 
@@ -79,7 +81,7 @@ impl Display for Board {
                         && (row_idx < 8 && self.fences[row_idx][idx] == Some(Axis::Vertical)
                             || row_idx > 0 && self.fences[row_idx - 1][idx] == Some(Axis::Vertical))
                     {
-                        "┃"
+                        "\x1b[31m┃\x1b[0m"
                     } else {
                         "│"
                     };
@@ -91,20 +93,20 @@ impl Display for Board {
             }
             write!(f, " {}─┼", row_idx + 1)?;
             (0..9).try_for_each(|idx| {
-                let square_side_fmt = if idx < 8
-                    && self.fences[row_idx][idx] == Some(Axis::Horizontal)
-                    || idx > 0 && self.fences[row_idx][idx - 1] == Some(Axis::Horizontal)
-                {
-                    "━━━"
-                } else {
-                    "───"
-                };
+                let square_side_fmt =
+                    if idx < 8 && self.fences[row_idx][idx] == Some(Axis::Horizontal) {
+                        "\x1b[31m━━━"
+                    } else if idx > 0 && self.fences[row_idx][idx - 1] == Some(Axis::Horizontal) {
+                        "━━━\x1b[0m"
+                    } else {
+                        "───"
+                    };
                 let square_corner_fmt = if idx == 8 {
                     "┤"
                 } else {
                     match self.fences[row_idx][idx] {
-                        Some(Axis::Vertical) => "╂",
-                        Some(Axis::Horizontal) => "┿",
+                        Some(Axis::Vertical) => "\x1b[31m┃\x1b[0m",
+                        Some(Axis::Horizontal) => "━",
                         _ => "┼",
                     }
                 };

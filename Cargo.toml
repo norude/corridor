@@ -7,3 +7,4 @@ edition = "2021"
 
 [dependencies]
 input-macro = "0.2.0"
+rand = "0.8.5"
