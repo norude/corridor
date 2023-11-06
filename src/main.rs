@@ -56,8 +56,7 @@ fn game_loop() {
     let mut board = Board::default();
     let mut i = 0;
     loop {
-        //'game loop
-        //println!("{board}");
+        // println!("{board}");
         println!("It's {turn} player's move! (turn {i})");
         #[allow(unreachable_patterns, clippy::match_same_arms)]
         let r#move = match turn {
@@ -84,7 +83,4 @@ fn game_loop() {
 fn main() {
     game_loop();
     // println!("{}",Board::default());
-}
-const fn fun() -> i32 {
-    4
 }

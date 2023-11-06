@@ -4,10 +4,7 @@ impl Board {
     pub fn legal_moves(&self, player: PlayerColor) -> Vec<LegalMove> {
         let mut moves = vec![];
         {
-            let player_pos = match player {
-                PlayerColor::White => self.white_pawn,
-                PlayerColor::Black => self.black_pawn,
-            };
+            let player_pos = self.pawn_pos(player);
 
             for dir in [
                 Direction::Left,
@@ -20,16 +17,19 @@ impl Board {
                 }
                 let (x1, y1) = dir.offset(player_pos);
                 if self.squares[y1][x1].is_none() {
-                    moves.push(LegalMove(Lmi::MovePlayer((x1, y1))));
+                    moves.push(LegalMove(Lmi::MovePlayer(player_pos, (x1, y1))));
                     continue;
                 }
                 if !self.is_obstructed((x1, y1), dir) {
-                    moves.push(LegalMove(Lmi::MovePlayer(dir.offset((x1, y1)))));
+                    moves.push(LegalMove(Lmi::MovePlayer(player_pos, dir.offset((x1, y1)))));
                     continue;
                 }
                 for sec_dir in dir.perpendiculars() {
                     if !self.is_obstructed(player_pos, sec_dir) {
-                        moves.push(LegalMove(Lmi::MovePlayer(sec_dir.offset(player_pos))));
+                        moves.push(LegalMove(Lmi::MovePlayer(
+                            player_pos,
+                            sec_dir.offset((x1, y1)),
+                        )));
                     }
                 }
             }

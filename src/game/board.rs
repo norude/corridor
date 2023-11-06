@@ -133,6 +133,13 @@ impl Board {
             _ => None,
         }
     }
+
+    const fn pawn_pos(&self, player: PlayerColor) -> (usize, usize) {
+        match player {
+            PlayerColor::White => self.white_pawn,
+            PlayerColor::Black => self.black_pawn,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -144,7 +151,7 @@ pub enum MoveMakeFail {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Lmi {
     // LegalMove inner workings
-    MovePlayer((usize, usize)),
+    MovePlayer((usize, usize), (usize, usize)),
     PlaceFence(Axis, (usize, usize)),
 }
 
@@ -152,21 +159,21 @@ enum Lmi {
 pub struct LegalMove(Lmi);
 
 impl Board {
-    pub fn make_move(&mut self, r#move: Move, player: PlayerColor) -> Result<(), MoveMakeFail> {
+    pub fn make_legal_move(&mut self, r#move: LegalMove, player: PlayerColor) {
         match r#move {
-            Move::MovePlayer(dir, second_dir) => self
-                .move_pawn(player, dir, second_dir)
-                .map_err(MoveMakeFail::PawnMoveFail),
-            Move::PlaceFence(axis, pos) => self
-                .move_fence(player, axis, pos)
-                .map_err(MoveMakeFail::AddFenceMove),
+            LegalMove(Lmi::MovePlayer(orig_pos, pos)) => {
+                self.move_pawn_unchecked(player, orig_pos, pos)
+            }
+            LegalMove(Lmi::PlaceFence(axis, pos)) => self.move_fence_unchecked(player, axis, pos),
         }
     }
 
-    pub fn make_legal_move(&mut self, r#move: LegalMove, player: PlayerColor) {
+    pub fn unmake_legal_move(&mut self, r#move: LegalMove, player: PlayerColor) {
         match r#move {
-            LegalMove(Lmi::MovePlayer(pos)) => self.move_pawn_unchecked(player, pos),
-            LegalMove(Lmi::PlaceFence(axis, pos)) => self.move_fence_unchecked(player, axis, pos),
+            LegalMove(Lmi::MovePlayer(orig_pos, pos)) => {
+                self.unmove_pawn_unchecked(player, orig_pos, pos)
+            }
+            LegalMove(Lmi::PlaceFence(axis, pos)) => self.unmove_fence_unchecked(player, axis, pos),
         }
     }
 
@@ -177,6 +184,7 @@ impl Board {
     ) -> Result<LegalMove, MoveMakeFail> {
         Ok(LegalMove(match r#move {
             Move::MovePlayer(dir, second_dir) => Lmi::MovePlayer(
+                self.pawn_pos(player),
                 self.pawn_move_destination(player, dir, second_dir)
                     .map_err(MoveMakeFail::PawnMoveFail)?,
             ),

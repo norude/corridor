@@ -7,17 +7,6 @@ pub enum Fail {
     NoFencesRemaining,
 }
 impl Board {
-    pub fn move_fence(
-        &mut self,
-        player: PlayerColor,
-        axis: Axis,
-        (x, y): (usize, usize),
-    ) -> Result<(), Fail> {
-        self.is_fence_move_legal(player, axis, (x, y))?;
-        self.move_fence_unchecked(player, axis, (x, y));
-        Ok(())
-    }
-
     pub(super) fn move_fence_unchecked(
         &mut self,
         player: PlayerColor,
@@ -54,6 +43,65 @@ impl Board {
                 }
             };
         }
+    }
+
+    pub(super) fn unmove_fence_unchecked(
+        &mut self,
+        player: PlayerColor,
+        axis: Axis,
+        (x, y): (usize, usize),
+    ) {
+        self.fences[y][x] = None;
+        match player {
+            PlayerColor::White => self.fences_left_for_white += 1,
+            PlayerColor::Black => self.fences_left_for_black += 1,
+        };
+
+        self.figure_correct_legality_at((x, y));
+        match axis {
+            Axis::Horizontal => {
+                if x != 0 {
+                    self.figure_correct_legality_at((x - 1, y));
+                }
+                if x != 7 {
+                    self.figure_correct_legality_at((x + 1, y));
+                }
+            }
+            Axis::Vertical => {
+                if y != 0 {
+                    self.figure_correct_legality_at((x, y - 1));
+                }
+                if y != 7 {
+                    self.figure_correct_legality_at((x, y + 1));
+                }
+            }
+        };
+    }
+
+    fn figure_correct_legality_at(&mut self, (x, y): (usize, usize)) {
+        let mut legality = FenceLegality::Any;
+
+        if x > 0 {
+            if let Some(f) = self.fences[y][x - 1] {
+                legality = legality.restrict(f);
+            };
+        }
+        if y > 0 {
+            if let Some(f) = self.fences[y - 1][x] {
+                legality = legality.restrict(f);
+            };
+        }
+        if x < 7 {
+            if let Some(f) = self.fences[y][x + 1] {
+                legality = legality.restrict(f);
+            };
+        }
+        if y < 7 {
+            if let Some(f) = self.fences[y + 1][x] {
+                legality = legality.restrict(f);
+            };
+        }
+        self.legal_fence_places[y][x] = legality;
     }
 
     pub fn is_fence_move_legal(

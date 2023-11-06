@@ -7,21 +7,12 @@ pub enum Fail {
     InvalidSecondary,
 }
 impl Board {
-    pub fn move_pawn(
+    pub(super) fn move_pawn_unchecked(
         &mut self,
         pawn: PlayerColor,
-        dir: Direction,
-        second_dir: Option<Direction>,
-    ) -> Result<(), Fail> {
-        self.move_pawn_unchecked(pawn, self.pawn_move_destination(pawn, dir, second_dir)?);
-        Ok(())
-    }
-
-    pub(super) fn move_pawn_unchecked(&mut self, pawn: PlayerColor, (x, y): (usize, usize)) {
-        let (xo, yo) = match pawn {
-            PlayerColor::White => self.white_pawn,
-            PlayerColor::Black => self.black_pawn,
-        };
+        (xo, yo): (usize, usize),
+        (x, y): (usize, usize),
+    ) {
         self.squares[yo][xo] = None;
         self.squares[y][x] = Some(pawn);
         match pawn {
@@ -29,18 +20,27 @@ impl Board {
             PlayerColor::Black => self.black_pawn = (x, y),
         };
     }
-
+    pub(super) fn unmove_pawn_unchecked(
+        &mut self,
+        pawn: PlayerColor,
+        (xo, yo): (usize, usize),
+        (x, y): (usize, usize),
+    ) {
+        self.squares[y][x] = None;
+        self.squares[yo][xo] = Some(pawn);
+        match pawn {
+            PlayerColor::White => self.white_pawn = (xo, yo),
+            PlayerColor::Black => self.black_pawn = (xo, yo),
+        };
+    }
     pub fn pawn_move_destination(
         &self,
-        pawn: PlayerColor,
+        player: PlayerColor,
         dir: Direction,
         second_dir: Option<Direction>,
     ) -> Result<(usize, usize), Fail> {
         use Fail::{InvalidSecondary, NoSecondary, PathObstructed};
-        let (x, y) = match pawn {
-            PlayerColor::White => self.white_pawn,
-            PlayerColor::Black => self.black_pawn,
-        };
+        let (x, y) = self.pawn_pos(player);
 
         if self.is_obstructed((x, y), dir) {
             return Err(PathObstructed);
