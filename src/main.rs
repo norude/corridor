@@ -7,8 +7,7 @@
 )]
 #![allow(dead_code)]
 mod game;
-
-use crate::game::{AddFenceFail, Board, MoveMakeFail, PawnMoveFail, PlayerColor};
+use crate::game::{fence_move, pawn_move, Board, MoveMakeFail, PlayerColor};
 
 fn game_loop() {
     use PlayerColor::{Black, White};
@@ -24,45 +23,58 @@ fn game_loop() {
                 Ok(the_move) => the_move,
                 Err(err) => {
                     match err {
-                            game::TryIntoMoveError::UnrecognizedChar =>println!(
-                                "Couldn't understand the move, because there was an unrecognized character"),
-                            game::TryIntoMoveError::UnexpectedEndOfString =>println!(
-                                "Couldn't understand the move, because more characters were expected to be given"),
-                        }
+                        game::TryIntoMoveError::UnrecognizedChar => println!(
+							"Couldn't understand the move, because there was an unrecognized character"
+						),
+                        game::TryIntoMoveError::UnexpectedEndOfString => println!(
+								"Couldn't understand the move, because more characters were expected to be given"
+							),
+                    }
                     continue;
                 }
             };
             if let Err(err) = board.make_move(the_move, turn) {
                 match err {
-                    MoveMakeFail::PawnMoveFail(PawnMoveFail::PathObstructed) => println!(
-                        "Couldn't move the pawn, because the chosen path was obstructed"),
-                    MoveMakeFail::PawnMoveFail(PawnMoveFail::NoSecondaryDirection) => println!(
-                        "Couldn't move the pawn, because secondary direction was required but not provided"),
-                    MoveMakeFail::AddFenceFail(AddFenceFail::Collides) => println!(
-                        "Couldn't add the fence there, because it would collide with another fence"),
-                    MoveMakeFail::AddFenceFail(AddFenceFail::NoPathRemaining) => println!(
-                        "Couldn't add the fence there, because it would leave no path for at least one of the pawns"),
-                    MoveMakeFail::AddFenceFail(AddFenceFail::NoFencesRemaining) => println!(
-                        "Couldn't add the fence, because there are no fences left for you"
-                    )
+                    MoveMakeFail::PawnMoveFail(pawn_move::Fail::PathObstructed) => {
+                        println!("Couldn't move the pawn, because the chosen path was obstructed")
+                    }
+                    MoveMakeFail::PawnMoveFail(pawn_move::Fail::NoSecondary) => println!(
+						"Couldn't move the pawn, because secondary direction was required but not provided"
+					),
+                    MoveMakeFail::PawnMoveFail(pawn_move::Fail::InvalidSecondary) => println!(
+						"Couldn't move the pawn, because secondary direction was not perpendicular to the primary direction"
+					),
+                    MoveMakeFail::AddFenceMove(fence_move::Fail::Collides) => println!(
+                        "Couldn't add the fence there, because it would collide with another fence"
+                    ),
+                    MoveMakeFail::AddFenceMove(fence_move::Fail::NoPathRemaining) => println!(
+						"Couldn't add the fence there, because it would leave no path for at least one of the pawns"
+					),
+                    MoveMakeFail::AddFenceMove(fence_move::Fail::NoFencesRemaining) => {
+                        println!("Couldn't add the fence, because there are no fences left for you")
+                    }
                 };
                 continue;
             }
+            break;
+        }
+
+        if let Some(player) = board.is_game_won() {
+            println!("{board}");
+            println!("{player:?} player won!");
             break;
         }
         turn = match turn {
             White => Black,
             Black => White,
         };
-        if let Some(player) = board.is_game_won() {
-            println!("{board}");
-            println!("{player:?} player won!");
-            break;
-        }
     }
 }
 
 fn main() {
     game_loop();
     // println!("{}",Board::default());
+}
+const fn fun() -> i32 {
+    4
 }
